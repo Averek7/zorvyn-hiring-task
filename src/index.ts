@@ -30,6 +30,15 @@ app.use(
   }),
 );
 
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    service: "finance-dashboard-backend",
+    status: "ok",
+    health: "/api/health",
+  });
+});
+
 app.use("/api/health", healthRouter);
 app.use("/api/setup", setupRouter);
 app.use("/api/auth", authRouter);

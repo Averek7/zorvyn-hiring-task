@@ -1,0 +1,377 @@
+{
+  "info": {
+    "_postman_id": "7bce8f8b-c2ca-4b99-9a62-4f0a51f4f6b7",
+    "name": "Finance Dashboard Backend - JWT Session Validation",
+    "description": "End-to-end validation for bootstrap, JWT login/refresh/logout, RBAC, records CRUD, and dashboard summary.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "codex"
+  },
+  "item": [
+    {
+      "name": "00 Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('has success true', function () { pm.expect(pm.response.json().success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Setup",
+      "item": [
+        {
+          "name": "Bootstrap Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-bootstrap-token", "value": "{{bootstrapToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"fullName\": \"Admin User\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/setup/bootstrap-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "setup", "bootstrap-admin"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 or 409', function () { pm.expect([201,409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('adminAccessToken', data.accessToken);",
+                  "pm.environment.set('adminRefreshToken', data.refreshToken);",
+                  "pm.environment.set('adminSessionId', data.sessionId);",
+                  "pm.environment.set('adminId', data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Admin Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{adminSessionId}}\",\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('adminAccessToken', data.accessToken);",
+                  "pm.environment.set('adminRefreshToken', data.refreshToken);",
+                  "pm.environment.set('adminSessionId', data.sessionId);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 User Management",
+      "item": [
+        {
+          "name": "Get Me (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });"] } }]
+        },
+        {
+          "name": "Create Analyst",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{analystEmail}}\",\n  \"fullName\": \"Analyst User\",\n  \"role\": \"ANALYST\",\n  \"status\": \"ACTIVE\",\n  \"password\": \"{{analystPassword}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('201', function () { pm.response.to.have.status(201); });", "pm.environment.set('analystId', pm.response.json().data.id);"] } }]
+        },
+        {
+          "name": "Create Viewer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{viewerEmail}}\",\n  \"fullName\": \"Viewer User\",\n  \"role\": \"VIEWER\",\n  \"status\": \"ACTIVE\",\n  \"password\": \"{{viewerPassword}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('201', function () { pm.response.to.have.status(201); });", "pm.environment.set('viewerId', pm.response.json().data.id);"] } }]
+        },
+        {
+          "name": "Login Analyst",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{analystEmail}}\",\n  \"password\": \"{{analystPassword}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });", "const d = pm.response.json().data; pm.environment.set('analystAccessToken', d.accessToken);"] } }]
+        },
+        {
+          "name": "Login Viewer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{viewerEmail}}\",\n  \"password\": \"{{viewerPassword}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });", "const d = pm.response.json().data; pm.environment.set('viewerAccessToken', d.accessToken);"] } }]
+        },
+        {
+          "name": "Viewer Cannot List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{viewerAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('403', function () { pm.response.to.have.status(403); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "04 Records",
+      "item": [
+        {
+          "name": "Create Income (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 5000,\n  \"type\": \"INCOME\",\n  \"category\": \"Salary\",\n  \"recordDate\": \"2026-04-03T10:00:00.000Z\",\n  \"notes\": \"salary\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/records", "host": ["{{baseUrl}}"], "path": ["api", "records"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('201', function () { pm.response.to.have.status(201); });", "pm.environment.set('recordId', pm.response.json().data.id);"] } }]
+        },
+        {
+          "name": "Create Expense (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 1200,\n  \"type\": \"EXPENSE\",\n  \"category\": \"Rent\",\n  \"recordDate\": \"2026-04-03T10:05:00.000Z\",\n  \"notes\": \"rent\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/records", "host": ["{{baseUrl}}"], "path": ["api", "records"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('201', function () { pm.response.to.have.status(201); });"] } }]
+        },
+        {
+          "name": "Analyst Can List Records",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{analystAccessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/records?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "records"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });"] } }]
+        },
+        {
+          "name": "Viewer Cannot List Records",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{viewerAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/records", "host": ["{{baseUrl}}"], "path": ["api", "records"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('403', function () { pm.response.to.have.status(403); });"] } }]
+        },
+        {
+          "name": "Analyst Cannot Update Record",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{analystAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"nope\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/records/{{recordId}}", "host": ["{{baseUrl}}"], "path": ["api", "records", "{{recordId}}"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('403', function () { pm.response.to.have.status(403); });"] } }]
+        },
+        {
+          "name": "Admin Updates Record",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"updated by admin\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/records/{{recordId}}", "host": ["{{baseUrl}}"], "path": ["api", "records", "{{recordId}}"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "05 Dashboard",
+      "item": [
+        {
+          "name": "Viewer Can Read Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{viewerAccessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/summary?trend=monthly&recentLimit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dashboard", "summary"],
+              "query": [
+                { "key": "trend", "value": "monthly" },
+                { "key": "recentLimit", "value": "10" }
+              ]
+            }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', function () { pm.response.to.have.status(200); });", "const d = pm.response.json().data; pm.expect(d.totals).to.have.property('netBalance');"] } }]
+        }
+      ]
+    },
+    {
+      "name": "06 Logout",
+      "item": [
+        {
+          "name": "Logout Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('204', function () { pm.response.to.have.status(204); });"] } }]
+        },
+        {
+          "name": "Old Admin Token Invalid After Logout",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api", "users", "me"] }
+          },
+          "response": [],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('401', function () { pm.response.to.have.status(401); });"] } }]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": []
+}
